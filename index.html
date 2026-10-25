@@ -549,7 +549,7 @@ function loadLogFromCSV(input) {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        const rows = e.target.result.replace(/^﻿/, "").split(/\r\n|\n/);
+        const rows = e.target.result.replace(/^\uFEFF/, "").split(/\r?\n/);
         const loaded = [];
         for (let i = 1; i < rows.length; i++) {
             const cols = rows[i].split(",");
