@@ -331,9 +331,7 @@ function loadStudentList(input) {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        const rows = e.target.result.replace(/^﻿/, "").split(/
-|
-/);
+        const rows = e.target.result.replace(/^\uFEFF/, "").split(/\r?\n/);
         studentMap = {};
         for (let row of rows) {
             const cols = row.split(",");
