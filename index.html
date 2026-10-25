@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FReCS ver.1.23</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="FReCS">
+<script src="jsQR.js"></script>
+<style>
+body { font-family: "Helvetica Neue", Arial, sans-serif; padding: 10px; background-color: #f4f7f6; text-align: center; color: #333; -webkit-text-size-adjust: 100%; }
+h2 { color: #2c3e50; margin: 15px 0 20px 0; letter-spacing: 2px; font-size: 1.6rem; font-weight: 800; }
+.card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; max-width: 650px; margin-left: auto; margin-right: auto; }
+.student-list-area { border: 2px solid #3498db; background-color: #eaf6ff; }
+.btn-list { background-color: #3498db; font-size: 0.9rem; padding: 8px 15px; margin-top:5px; color: white; border:none; border-radius:5px;}
+.btn-roster-edit { background-color: #e67e22; font-size: 0.9rem; padding: 8px 15px; margin-top:5px; margin-left:5px; color: white; border:none; border-radius:5px;}
+
+/* 入力欄スタイル */
+input#input-id, #id-display2, input#input-pc, #btn-goto-pc {
+  box-sizing: border-box; width: 266px; height: 64px;
+  font-size: 2rem; line-height: 1.2; padding: 8px 10px; text-align: center;
+  border: 3px solid #bdc3c7; border-radius: 8px; background: #eee; color: #333;
+  font-family: inherit; font-weight: normal; display: block; margin-left: auto; margin-right: auto;
+}
+/* 未入力時の文字色は「ＰＣ番号」と同じグレーに揃える */
+input#input-id::placeholder, input#input-pc::placeholder { color: #7f8c8d; opacity: 1; }
+input#input-id::-webkit-input-placeholder, input#input-pc::-webkit-input-placeholder { color: #7f8c8d; }
+input#input-id { margin-bottom: 15px; }
+#id-display2 { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+#id-display2:active { background: #dcdcdc; }
+#id-display2.empty { color: #7f8c8d; font-size: 1.1rem; }
+input#input-pc { border-color: #3498db; background: #fff; margin-bottom: 0; letter-spacing: 2px; }
+#btn-goto-pc { color: #7f8c8d; cursor: pointer; margin-top: 12px; }
+#btn-goto-pc:active { background: #dcdcdc; }
+
+/* 画面内テンキーのスタイル */
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto 15px auto; }
+.num-btn { background: #fff; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 1.5rem; font-weight: bold; padding: 15px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; font-family: inherit; }
+.num-btn:active { background: #dcdcdc; }
+.num-btn.clear { background: #e74c3c; color: white; border-color: #c0392b; }
+
+#student-name-display, #student-name-display2 { font-size: 1.2rem; color: #2c3e50; font-weight: bold; min-height: 1.5em; margin-bottom: 10px; padding: 5px; }
+#pc-full-display { font-size: 1.3rem; color: #2c3e50; font-weight: bold; min-height: 1.5em; margin: 8px 0 12px 0; padding: 5px; background: #eaf6ff; letter-spacing: 1px; }
+.option-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+.btn-toggle { font-size: 1.1rem; padding: 12px 0; width: 45%; border: 2px solid #bdc3c7; background-color: white; color: #7f8c8d; border-radius: 8px; font-weight: bold; font-family: inherit; }
+.btn-toggle.active-grad { background-color: #9b59b6; color: white; border-color: #8e44ad; }
+.btn-toggle.active-power { background-color: #f1c40f; color: #333; border-color: #f39c12; }
+.btn-qr { background-color: #27ae60; font-size: 1.4rem; padding: 20px 0; display: block; margin: 10px auto; width: 95%; max-width: 400px; box-shadow: 0 4px 0 #1e8449; color: white; border: none; border-radius: 10px; font-weight: bold; font-family: inherit; }
+.msg-box { height: 1.5em; font-weight: bold; color: #e74c3c; margin-top: 5px; }
+table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white; font-size: 0.85rem;}
+th, td { border: 1px solid #ddd; padding: 8px 4px; text-align: center; }
+th { background-color: #ecf0f1; color: #555; }
+.btn-huge { font-size: 1.3rem; padding: 15px 0; width: 100%; margin: 10px 0; display: block; border-radius: 8px; border:none; color:white; font-weight:bold; font-family: inherit; }
+.btn-save { background-color: #e67e22; box-shadow: 0 4px 0 #d35400; }
+.btn-load { background-color: #7f8c8d; box-shadow: 0 4px 0 #5f6c6d; }
+.btn-register { background-color: #2980b9; box-shadow: 0 4px 0 #1f6391; }
+.btn-back { background-color: #95a5a6; box-shadow: 0 4px 0 #7f8c8d; font-size: 1.05rem; padding: 12px 0; }
+.btn-next { background-color: #27ae60; box-shadow: 0 4px 0 #1e8449; }
+.btn-link { background: none; border: none; color: #7f8c8d; font-size: 0.9rem; text-decoration: underline; padding: 8px; font-family: inherit; cursor: pointer; }
+#qr-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
+#video-wrapper { position: relative; width: 90%; max-width: 500px; }
+video { width: 100%; border-radius: 10px; display:block; }
+.close-btn { margin-top: 20px; padding: 12px 40px; font-size: 1.2rem; background: #7f8c8d; border-radius: 30px; border:none; color:white; font-family: inherit; }
+#edit-area { display:none; margin-bottom:12px; padding:10px; background:#fffbf0; border: 2px dashed #f39c12; border-radius:8px; }
+.btn-edit-action { font-size: 0.9rem; padding: 10px 12px; border:none; border-radius:5px; color:white; font-weight:bold; font-family: inherit; }
+.selected-row { background-color: #fff3cd !important; border: 2px solid #f1c40f; }
+.page-tag { font-size: 0.8rem; color: #95a5a6; margin: 0 0 8px 0; letter-spacing: 1px; }
+.or-divider { display:flex; align-items:center; gap:10px; max-width:400px; width:95%; margin: 14px auto 12px auto; color:#95a5a6; font-size:0.85rem; }
+.or-divider::before, .or-divider::after { content:""; flex:1; height:1px; background:#dfe4e6; }
+
+/* 履歴未読込の案内 */
+#log-warning { display: none; border: 2px dashed #e74c3c; background: #fdf2f0; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
+#log-warning p { margin: 0 0 10px 0; font-size: 0.95rem; color: #c0392b; font-weight: bold; }
+#log-warning .note { font-weight: normal; color: #7f8c8d; font-size: 0.8rem; margin-top: 8px; }
+#log-status { font-size: 0.85rem; color: #7f8c8d; margin: 0 0 8px 0; }
+.log-actions { border-top: 3px solid #f1c40f; margin-top: 20px; padding-top: 8px; flex: 0 0 auto; }
+/* 3ページ目は画面内に収め、履歴の表だけをスクロールさせる */
+#page3 > .card { display: flex; flex-direction: column; max-height: calc(100vh - 100px); box-sizing: border-box; }
+#page3 > .card > *:not(#log-scroll) { flex: 0 0 auto; }
+#log-scroll { flex: 1 1 auto; min-height: 90px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#log-scroll thead th { position: sticky; top: 0; z-index: 1; }
+
+#roster-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; justify-content: center; align-items: center; }
+#roster-box { background: white; width: 95%; max-width: 650px; max-height: 90%; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; }
+#roster-scroll { overflow-y: auto; flex: 1; margin: 8px 0; }
+#roster-table input { width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 6px 4px; border: 1px solid #bdc3c7; border-radius: 4px; }
+#roster-table th { position: sticky; top: 0; }
+.roster-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.roster-actions button { font-size:0.9rem; padding:10px 12px; border:none; border-radius:5px; color:white; font-weight:bold; font-family: inherit; }
+</style>
+</head>
+<body>
+<h2>FReCS ver.1.23</h2>
+
+<!-- ==================== 1ページ目：学籍番号 ==================== -->
+<div id="page1">
+
+<div class="card student-list-area">
+<p style="font-size:0.85rem; color:#555; margin:0;">名簿CSV (A:番号, B:名前, C:備考)</p>
+<input type="file" id="student-csv" accept=".csv" style="display:none" onchange="loadStudentList(this)">
+<button class="btn-list" onclick="document.getElementById('student-csv').click()">名簿を変更</button>
+<div id="list-status" style="font-size:0.85rem; margin-top:6px; color:#7f8c8d;">未登録</div>
+</div>
+
+<div class="card">
+<p class="page-tag">1 / 3　学籍番号</p>
+<input type="text" id="input-id" placeholder="学籍番号" readonly>
+<div id="student-name-display"></div>
+
+<div class="numpad" id="numpad-id"></div>
+
+<div class="option-container">
+<button id="btn-grad" class="btn-toggle" onclick="toggleOption('grad')">卒業まで</button>
+<button id="btn-power" class="btn-toggle" onclick="toggleOption('power')">電源</button>
+</div>
+
+<button id="btn-goto-pc" onclick="goPage(2)">ＰＣ番号</button>
+
+<div class="msg-box"></div>
+<button class="btn-link" onclick="goPage(3)">📋 本日までの履歴を見る</button>
+</div>
+
+</div>
+
+<!-- ==================== 2ページ目：ＰＣ番号 ==================== -->
+<div id="page2" style="display:none;">
+
+<div class="card">
+<p class="page-tag">2 / 3　ＰＣ番号</p>
+<div id="id-display2" onclick="goPage(1)" title="タップすると学籍番号の入力に戻ります"></div>
+<div id="student-name-display2"></div>
+
+<button class="btn-qr" onclick="startQR()"> 📷  PCスキャン<br><span style="font-size:0.9rem; font-weight:normal;">(貸出・返却 自動判別)</span></button>
+<p class="or-divider"><span>または 手入力</span></p>
+
+<input type="text" id="input-pc" placeholder="ＰＣ番号" readonly>
+<div id="pc-full-display">Fu-</div>
+
+<div class="numpad" id="numpad-pc"></div>
+
+<button class="btn-huge btn-register" onclick="manualPcEntry()"> ✔  登録 (貸出・返却 自動判別)</button>
+<button class="btn-huge btn-back" onclick="goPage(1)"> ←  学籍番号の入力へ戻る</button>
+
+<div class="msg-box"></div>
+</div>
+
+</div>
+
+<!-- ==================== 3ページ目：本日までの履歴 ==================== -->
+<div id="page3" style="display:none;">
+
+<div class="card">
+<p class="page-tag">3 / 3　本日までの履歴</p>
+
+<div id="log-warning">
+<p>⚠ 履歴ファイルをまだ読み込んでいません</p>
+<p class="note">前回の続きなら下の「履歴読込」、今日が初回なら「履歴保存」を押してください。<button class="btn-link" style="padding:2px 6px;" onclick="dismissLogWarning()">閉じる</button></p>
+</div>
+
+<p id="log-status">0件</p>
+<p style="margin:0 0 8px 0;"><button class="btn-link" style="font-size:0.8rem; padding:2px 6px;" onclick="clearLog()">記憶した履歴を消去</button></p>
+
+<div id="edit-area">
+    <p style="margin:0 0 8px 0; font-size:0.9rem; color:#d35400; font-weight:bold;">▼ <span id="selected-target-name">選択中</span> の操作</p>
+    <div style="display:flex; justify-content:center;">
+        <button class="btn-edit-action" style="background:#e74c3c; margin-right:auto;" onclick="deleteSelectedRow()">🗑 削除</button>
+        <button class="btn-edit-action" style="background:#9b59b6;" onclick="toggleRemarkOnSelected('grad')">卒 (変更)</button>
+        <button class="btn-edit-action" style="background:#f1c40f; color:#333;" onclick="toggleRemarkOnSelected('power')">電 (変更)</button>
+    </div>
+</div>
+
+<div id="log-scroll">
+<table id="log-table">
+<thead><tr><th>番号</th><th>氏名</th><th>備考</th><th>PC番号</th><th>貸出日時</th><th>返却日時</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+
+<div class="msg-box"></div>
+<button class="btn-huge btn-next" onclick="goPage(1)"> →  次の人へ</button>
+
+<div class="log-actions">
+<button class="btn-huge btn-load" onclick="document.getElementById('log-csv').click()"> 📂  履歴読込</button>
+<button class="btn-huge btn-save" onclick="saveLogToCSV()"> 💾  履歴保存</button>
+</div>
+</div>
+
+<input type="file" id="log-csv" accept=".csv" style="display:none" onchange="loadLogFromCSV(this)">
+
+</div>
+
+<!-- ==================== モーダル ==================== -->
+<div id="roster-modal">
+<div id="roster-box">
+<h3 style="margin:4px 0;">名簿の編集</h3>
+<div id="roster-scroll">
+<table id="roster-table"><thead><tr><th style="width:25%">番号</th><th style="width:35%">名前</th><th>備考</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+</div>
+<div id="roster-msg" style="min-height:1.3em; font-weight:bold; color:#e74c3c; font-size:0.85rem;"></div>
+<div class="roster-actions">
+<button style="background:#3498db" onclick="addRosterRow()">＋ 行を追加</button>
+<button style="background:#27ae60" onclick="saveRosterEdit()">💾 保存</button>
+<button style="background:#16a085" onclick="exportRosterCSV()">名簿CSV書出</button>
+<button style="background:#7f8c8d" onclick="closeRosterEditor()">キャンセル</button>
+</div>
+</div>
+</div>
+
+<div id="qr-modal">
+<div id="video-wrapper"><video id="camera-feed" playsinline muted autoplay></video></div>
+<button class="close-btn" onclick="stopQR()">閉じる</button>
+</div>
+
+<script>
+let studentMap = {}; let visitLog = []; let videoStream = null; let isScanning = false; let isGradMode = false; let isPowerMode = true; let selectedRowIndex = -1;
+let logLoaded = false; let logFileName = ""; let logSavedAt = "";
+
+const PC_PREFIX = "Fu-";
+
+// ---- ページ切替 ----
+function goPage(n) {
+    document.getElementById('page1').style.display = (n === 1) ? 'block' : 'none';
+    document.getElementById('page2').style.display = (n === 2) ? 'block' : 'none';
+    document.getElementById('page3').style.display = (n === 3) ? 'block' : 'none';
+    if (n === 2) syncPage2();
+    if (n === 3) updateLogStatus();
+    window.scrollTo(0, 0);
+}
+function syncPage2() {
+    const id = document.getElementById("input-id").value.trim();
+    const box = document.getElementById("id-display2");
+    box.textContent = id || "学籍番号なし（返却）";
+    box.className = id ? "" : "empty";
+    const nm = document.getElementById("student-name-display").textContent;
+    const d2 = document.getElementById("student-name-display2");
+    d2.textContent = nm;
+    d2.style.backgroundColor = nm ? "#eaf6ff" : "transparent";
+}
+
+// ---- テンキー ----
+function buildNumpad(elId, target) {
+    const keys = ['1','2','3','4','5','6','7','8','9','C','0','BS'];
+    const el = document.getElementById(elId);
+    keys.forEach(k => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'num-btn' + ((k === 'C' || k === 'BS') ? ' clear' : '');
+        b.textContent = (k === 'BS') ? '←' : k;
+        b.onclick = function() { addNum(k, target); };
+        el.appendChild(b);
+    });
+}
+function addNum(val, target) {
+    if (target === 'pc') {
+        const box = document.getElementById("input-pc");
+        let d = box.value;
+        if (val === 'C') d = "";
+        else if (val === 'BS') d = d.slice(0, -1);
+        else d += val;
+        box.value = d;
+        updatePcDisplay();
+        return;
+    }
+    const input = document.getElementById("input-id");
+    if (val === 'C') {
+        input.value = "";
+    } else if (val === 'BS') {
+        input.value = input.value.slice(0, -1);
+    } else {
+        input.value += val;
+    }
+    // 名簿照合イベントを強制発火
+    checkStudent(input.value);
+}
+
+// ---- PC番号 ----
+function getPcDigits() { return document.getElementById("input-pc").value.trim(); }
+function updatePcDisplay() { document.getElementById("pc-full-display").textContent = PC_PREFIX + getPcDigits(); }
+function resetPcField() { document.getElementById("input-pc").value = ""; updatePcDisplay(); }
+function manualPcEntry() {
+    const digits = getPcDigits();
+    if (!digits) { showMsg("PC番号を入力してください", true); return; }
+    deselectRow();
+    if (handleScanResult(PC_PREFIX + digits) !== false) goPage(3);
+}
+
+function checkStudent(id) {
+    if (id.length > 0) deselectRow();
+    const disp = document.getElementById("student-name-display");
+    if (studentMap[id]) {
+        disp.textContent = `${studentMap[id].name}`;
+        disp.style.backgroundColor = "#eaf6ff";
+    } else {
+        disp.textContent = "";
+        disp.style.backgroundColor = "transparent";
+    }
+    syncPage2();
+}
+
+function showMsg(text, isError=false) {
+    const boxes = document.querySelectorAll(".msg-box");
+    boxes.forEach(d => { d.textContent = text; d.style.color = isError ? "red" : "#27ae60"; });
+    setTimeout(() => boxes.forEach(d => d.textContent = ""), 3000);
+}
+
+// ---- 名簿の記憶 ----
+const ROSTER_KEY = "FReCS_roster_v1";
+let rosterFileName = "";
+let rosterSavedAt = "";
+function persistRoster() {
+    try { localStorage.setItem(ROSTER_KEY, JSON.stringify({ fileName: rosterFileName, savedAt: rosterSavedAt, map: studentMap })); } catch (e) { showMsg("名簿の保存に失敗（ブラウザ保存が使えません）", true); }
+}
+function restoreRoster() {
+    try {
+        const raw = localStorage.getItem(ROSTER_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        if (d && d.map) { studentMap = d.map; rosterFileName = d.fileName || ""; rosterSavedAt = d.savedAt || ""; }
+    } catch (e) {}
+    updateListStatus();
+}
+function updateListStatus() {
+    const count = Object.keys(studentMap).length;
+    const el = document.getElementById("list-status");
+    if (count === 0) { el.textContent = "未登録"; return; }
+    el.textContent = `${count}名 登録済` + (rosterFileName ? `（${rosterFileName}）` : "") + (rosterSavedAt ? ` 更新: ${rosterSavedAt}` : "");
+}
+function nowStr() { return new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+function loadStudentList(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const rows = e.target.result.replace(/^﻿/, "").split(/
+|
+/);
+        studentMap = {};
+        for (let row of rows) {
+            const cols = row.split(",");
+            if (cols.length >= 2) { const id = cols[0].trim(); if (id) studentMap[id] = { name: cols[1].trim(), remarks: (cols[2] || "").trim() }; }
+        }
+        rosterFileName = file.name; rosterSavedAt = nowStr();
+        persistRoster(); updateListStatus(); checkStudent(document.getElementById("input-id").value);
+        input.value = "";
+    };
+    reader.readAsText(file);
+}
+
+// ---- 名簿編集 ----
+function addRosterRow(id = "", name = "", remarks = "") {
+    const tbody = document.querySelector("#roster-table tbody");
+    const tr = document.createElement("tr");
+    [id, name, remarks].forEach(v => { const td = document.createElement("td"); const inp = document.createElement("input"); inp.type = "text"; inp.value = v; td.appendChild(inp); tr.appendChild(td); });
+    const tdDel = document.createElement("td"); const b = document.createElement("button");
+    b.textContent = "🗑"; b.style.cssText = "border:none;background:none;font-size:1.1rem;";
+    b.onclick = function() { tr.remove(); }; tdDel.appendChild(b); tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+    if (!id && !name) tr.querySelector("input").focus();
+}
+function openRosterEditor() {
+    const tbody = document.querySelector("#roster-table tbody"); tbody.innerHTML = "";
+    document.getElementById("roster-msg").textContent = "";
+    Object.keys(studentMap).forEach(id => addRosterRow(id, studentMap[id].name, studentMap[id].remarks || ""));
+    document.getElementById("roster-modal").style.display = "flex";
+}
+function closeRosterEditor() { document.getElementById("roster-modal").style.display = "none"; }
+function readRosterRows() {
+    const out = [];
+    document.querySelectorAll("#roster-table tbody tr").forEach(tr => {
+        const v = Array.from(tr.querySelectorAll("input")).map(i => i.value.trim());
+        if (v[0] || v[1] || v[2]) out.push({ id: v[0], name: v[1], remarks: v[2] });
+    });
+    return out;
+}
+function saveRosterEdit() {
+    const msg = document.getElementById("roster-msg");
+    const rows = readRosterRows(); const map = {};
+    for (const r of rows) {
+        if (!r.id) { msg.textContent = "番号が空の行があります"; return; }
+        if (map[r.id]) { msg.textContent = `番号が重複しています: ${r.id}`; return; }
+        map[r.id] = { name: r.name, remarks: r.remarks };
+    }
+    studentMap = map; rosterSavedAt = nowStr();
+    if (!rosterFileName) rosterFileName = "手入力";
+    persistRoster(); updateListStatus(); checkStudent(document.getElementById("input-id").value);
+    closeRosterEditor(); showMsg("名簿を保存しました");
+}
+function exportRosterCSV() {
+    const rows = readRosterRows(); if (rows.length === 0) return;
+    let csv = "﻿"; rows.forEach(r => { csv += `${r.id},${r.name},${r.remarks}
+`; });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    link.download = "FReCS_roster.csv"; link.click();
+}
+
+// ---- オプション ----
+function applyOptionStyles() { document.getElementById('btn-grad').className = isGradMode ? 'btn-toggle active-grad' : 'btn-toggle'; document.getElementById('btn-power').className = isPowerMode ? 'btn-toggle active-power' : 'btn-toggle'; }
+function toggleOption(type) { if (type === 'grad') { isGradMode = !isGradMode; } else if (type === 'power') { isPowerMode = !isPowerMode; } applyOptionStyles(); }
+function resetOptions() { isGradMode = false; isPowerMode = true; applyOptionStyles(); }
+
+// ---- QRスキャン ----
+async function startQR() {
+    deselectRow();
+    const modal = document.getElementById('qr-modal');
+    const video = document.getElementById('camera-feed');
+    modal.style.display = "flex";
+    isScanning = true;
+
+    // iPadOSでのインライン再生・自動再生制約の解除
+    video.setAttribute("playsinline", "true");
+    video.muted = true;
+
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        });
+        video.srcObject = videoStream;
+        await video.play();
+
+        // 解像度が確定してから描画ループへ進む
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+            requestAnimationFrame(tick);
+        } else {
+            video.onloadedmetadata = () => {
+                requestAnimationFrame(tick);
+            };
+        }
+    } catch (e) {
+        alert("カメラ起動エラー: " + (e.name || e.message));
+        stopQR();
+    }
+}
+
+function tick() {
+    if (!isScanning) return;
+    const video = document.getElementById('camera-feed');
+
+    if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "attemptBoth" });
+
+        if (code && code.data) {
+            stopQR();
+            if (handleScanResult(code.data) !== false) goPage(3);
+            return;
+        }
+    }
+    if (isScanning) requestAnimationFrame(tick);
+}
+
+function stopQR() {
+    isScanning = false;
+    const modal = document.getElementById('qr-modal');
+    const video = document.getElementById('camera-feed');
+    modal.style.display = "none";
+    if (video) {
+        video.onloadedmetadata = null;
+        video.pause();
+        video.srcObject = null;
+    }
+    if (videoStream) {
+        videoStream.getTracks().forEach(t => t.stop());
+        videoStream = null;
+    }
+}
+
+// ---- 貸出・返却 ----
+function handleScanResult(originalPcId) { const now = new Date(); const timeStr = now.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); const scannedId = String(originalPcId).replace(/PC/gi, "").trim(); const scannedTail = scannedId.slice(-6); let lendingRecordIndex = -1; for (let i = visitLog.length - 1; i >= 0; i--) { const recordId = String(visitLog[i].pcId).replace(/PC/gi, "").trim(); if (recordId.slice(-6) === scannedTail && visitLog[i].out === "-") { lendingRecordIndex = i; break; } } if (lendingRecordIndex !== -1) { visitLog[lendingRecordIndex].out = timeStr; updateTable(); showMsg(`${scannedId} 返却完了`); document.getElementById("input-id").value = ""; document.getElementById("student-name-display").textContent = ""; selectRow(lendingRecordIndex); } else { const idBox = document.getElementById("input-id"); const studentId = idBox.value.trim(); if (!studentId) { alert(`【エラー】\n貸出操作です。\n先に学籍番号を入力してください。`); return false; } const student = studentMap[studentId] || { name: "未登録", remarks: "" }; let rem = student.remarks; if (isGradMode) rem += (rem ? " " : "") + "卒"; if (isPowerMode) rem += (rem ? " " : "") + "電"; visitLog.push({ id: studentId, name: student.name, remarks: rem, pcId: scannedId, in: timeStr, out: "-" }); updateTable(); showMsg(`${scannedId} 貸出完了`); selectRow(visitLog.length - 1); idBox.value = ""; document.getElementById("student-name-display").textContent = ""; resetOptions(); } resetPcField(); syncPage2(); updateLogStatus(); return true; }
+
+function selectRow(idx) { selectedRowIndex = idx; updateTable(); const row = visitLog[idx]; if(row){ document.getElementById("selected-target-name").textContent = `${row.name} (${row.pcId})`; document.getElementById("edit-area").style.display = "block"; } }
+function deselectRow() { selectedRowIndex = -1; document.getElementById("edit-area").style.display = "none"; updateTable(); }
+function deleteSelectedRow() { if (selectedRowIndex === -1) return; if(!confirm(`削除しますか？`)) return; visitLog.splice(selectedRowIndex, 1); deselectRow(); updateLogStatus(); }
+function toggleRemarkOnSelected(type) { if (selectedRowIndex === -1) return; const tag = (type === 'grad') ? "卒" : "電"; let rem = visitLog[selectedRowIndex].remarks || ""; let parts = rem.split(/\s+/).filter(s => s !== ""); if (parts.includes(tag)) parts = parts.filter(p => p !== tag); else parts.push(tag); visitLog[selectedRowIndex].remarks = parts.join(" "); updateTable(); }
+
+// 新しい順（下＝古い、上＝新しい）に表示
+function updateTable() { const tbody = document.querySelector("#log-table tbody"); tbody.innerHTML = ""; for(let i = visitLog.length - 1; i >= 0; i--) { const row = visitLog[i]; const tr = document.createElement("tr"); tr.style.color = (row.out === "-") ? "black" : "#aaa"; if (i === selectedRowIndex) tr.className = "selected-row"; tr.onclick = function() { selectRow(i); }; tr.innerHTML = `<td>${row.id}</td><td>${row.name}</td><td>${row.remarks}</td><td>${row.pcId}</td><td>${row.in}</td><td>${row.out}</td>`; tbody.appendChild(tr); } persistLog(); }
+
+// ---- 履歴の状態表示 ----
+function updateLogStatus() {
+    const outCount = visitLog.filter(r => r.out === "-").length;
+    document.getElementById("log-status").textContent =
+        `全${visitLog.length}件（貸出中 ${outCount}件）`
+        + (logFileName ? `　読込: ${logFileName}` : "")
+        + (logSavedAt ? `　記憶: ${logSavedAt}` : "");
+    document.getElementById("log-warning").style.display = logLoaded ? "none" : "block";
+    persistLog();
+}
+function dismissLogWarning() { logLoaded = true; updateLogStatus(); }
+
+// ---- 履歴の記憶（ブラウザに保存し、次回起動時に復元）----
+const LOG_KEY = "FReCS_log_v1";
+let logRestoring = false;
+function persistLog() {
+    if (logRestoring) return;
+    logSavedAt = nowStr();
+    try {
+        localStorage.setItem(LOG_KEY, JSON.stringify({ loaded: logLoaded, fileName: logFileName, savedAt: logSavedAt, log: visitLog }));
+    } catch (e) {}
+}
+function restoreLog() {
+    logRestoring = true;
+    try {
+        const raw = localStorage.getItem(LOG_KEY);
+        if (raw) {
+            const d = JSON.parse(raw);
+            if (d && Array.isArray(d.log)) {
+                visitLog = d.log;
+                logLoaded = !!d.loaded;
+                logFileName = d.fileName || "";
+                logSavedAt = d.savedAt || "";
+            }
+        }
+    } catch (e) {}
+    logRestoring = false;
+    updateTable();
+    updateLogStatus();
+}
+function clearLog() {
+    if (!confirm("記憶している履歴をすべて消去します。よろしいですか？\n（保存していない記録は元に戻せません）")) return;
+    visitLog = []; logLoaded = false; logFileName = ""; logSavedAt = "";
+    deselectRow(); updateTable(); updateLogStatus();
+    showMsg("履歴を消去しました");
+}
+
+// ---- 履歴の保存・読込 ----
+function saveLogToCSV() {
+    if (visitLog.length === 0) { showMsg("保存する履歴がありません", true); return; }
+    let csv = "﻿学籍番号,名前,備考,PC番号,貸出日時,返却日時\n";
+    visitLog.forEach(r => { csv += `${r.id},${r.name},${r.remarks},${r.pcId},${r.in},${r.out}\n`; });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `FReCS_log.csv`;
+    link.click();
+    logLoaded = true;
+    updateLogStatus();
+    showMsg("履歴を保存しました");
+}
+function loadLogFromCSV(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const rows = e.target.result.replace(/^﻿/, "").split(/\r\n|\n/);
+        const loaded = [];
+        for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i].split(",");
+            if (cols.length >= 6) loaded.push({ id: cols[0], name: cols[1], remarks: cols[2], pcId: cols[3], in: cols[4], out: cols[5] });
+        }
+        // 読み込んだ記録と今回の記録を結合（同じ記録は1つにまとめる）
+        const merged = []; const seen = new Set();
+        loaded.concat(visitLog).forEach(r => {
+            const key = `${r.id}|${r.pcId}|${r.in}`;
+            if (seen.has(key)) return;
+            seen.add(key); merged.push(r);
+        });
+        // 貸出日時の順に並べ替え（表示は新しい順）
+        merged.sort((a, b) => String(a.in).localeCompare(String(b.in)));
+        visitLog = merged;
+        logLoaded = true; logFileName = file.name;
+        deselectRow(); updateTable(); updateLogStatus();
+        showMsg(`履歴を読み込みました（全${visitLog.length}件）`);
+        input.value = "";
+    };
+    reader.readAsText(file);
+}
+
+// ---- 初期化 ----
+buildNumpad('numpad-id', 'id');
+buildNumpad('numpad-pc', 'pc');
+applyOptionStyles();
+updatePcDisplay();
+syncPage2();
+restoreRoster();
+restoreLog();
+goPage(1);
+</script>
+</body>
+</html>
